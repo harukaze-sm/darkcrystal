@@ -1,0 +1,11 @@
+{
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "postgres",
+  "password": "qwerasdf",
+  "database": "darkcrystaldev",
+  "entities": ["./src/entities/**/*.ts", "./src/entities/*.ts"],
+  "synchronize": true,
+  "logging": true
+}
