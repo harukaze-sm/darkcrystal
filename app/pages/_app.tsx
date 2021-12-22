@@ -1,4 +1,3 @@
-import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import {
   createClient,
@@ -7,6 +6,7 @@ import {
   subscriptionExchange,
 } from "urql";
 import { WebSocketLink } from "apollo-link-ws";
+import { GetStaticProps, NextPageContext } from "next/types";
 
 const wsClient = process.browser
   ? new WebSocketLink({
@@ -20,6 +20,9 @@ const wsClient = process.browser
 
 const client = createClient({
   url: "http://localhost:8000/graphql",
+  fetchOptions: {
+    credentials: "include",
+  },
   exchanges: [
     ...defaultExchanges,
     subscriptionExchange({
@@ -36,5 +39,14 @@ function MyApp({ Component, pageProps }: AppProps) {
     </Provider>
   );
 }
+
+interface Context {
+  ctx: NextPageContext;
+}
+
+MyApp.getInitialProps = async ({ ctx }: Context) => {
+  console.info(ctx.req?.headers.cookie);
+  return {};
+};
 
 export default MyApp;

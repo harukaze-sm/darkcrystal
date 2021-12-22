@@ -24,6 +24,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   createUser: UserResponse;
   logIn: UserResponse;
+  logOut: Scalars['Boolean'];
   sendMessage: Scalars['String'];
 };
 
@@ -49,13 +50,8 @@ export type Query = {
   __typename?: 'Query';
   hello: Scalars['String'];
   test: Scalars['String'];
-  user: User;
+  user?: Maybe<User>;
   users: Array<User>;
-};
-
-
-export type QueryUserArgs = {
-  id: Scalars['Int'];
 };
 
 export type Subscription = {
@@ -85,6 +81,24 @@ export type CreateUserMutationVariables = Exact<{
 
 export type CreateUserMutation = { __typename?: 'Mutation', createUser: { __typename?: 'UserResponse', error?: string | null | undefined, user?: { __typename?: 'User', id: number, role: string, username: string } | null | undefined } };
 
+export type LogInMutationVariables = Exact<{
+  password: Scalars['String'];
+  email: Scalars['String'];
+}>;
+
+
+export type LogInMutation = { __typename?: 'Mutation', logIn: { __typename?: 'UserResponse', error?: string | null | undefined, user?: { __typename?: 'User', id: number, role: string, username: string } | null | undefined } };
+
+export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type LogoutMutation = { __typename?: 'Mutation', logOut: boolean };
+
+export type UserQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', id: number, username: string, role: string } | null | undefined };
+
 export type QueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -111,6 +125,44 @@ export const CreateUserDocument = gql`
 
 export function useCreateUserMutation() {
   return Urql.useMutation<CreateUserMutation, CreateUserMutationVariables>(CreateUserDocument);
+};
+export const LogInDocument = gql`
+    mutation LogIn($password: String!, $email: String!) {
+  logIn(password: $password, email: $email) {
+    error
+    user {
+      id
+      role
+      username
+    }
+  }
+}
+    `;
+
+export function useLogInMutation() {
+  return Urql.useMutation<LogInMutation, LogInMutationVariables>(LogInDocument);
+};
+export const LogoutDocument = gql`
+    mutation Logout {
+  logOut
+}
+    `;
+
+export function useLogoutMutation() {
+  return Urql.useMutation<LogoutMutation, LogoutMutationVariables>(LogoutDocument);
+};
+export const UserDocument = gql`
+    query User {
+  user {
+    id
+    username
+    role
+  }
+}
+    `;
+
+export function useUserQuery(options: Omit<Urql.UseQueryArgs<UserQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<UserQuery>({ query: UserDocument, ...options });
 };
 export const QueryDocument = gql`
     query Query {

@@ -1,0 +1,33 @@
+mutation CreateUser($password: String!, $email: String!, $username: String!) {
+  createUser(password: $password, email: $email, username: $username) {
+    error
+    user {
+      id
+      role
+      username
+    }
+  }
+}
+
+mutation LogIn($password: String!, $email: String!) {
+  logIn(password: $password, email: $email) {
+    error
+    user {
+      id
+      role
+      username
+    }
+  }
+}
+
+mutation Logout {
+  logOut
+}
+
+query User {
+  user {
+    id
+    username
+    role
+  }
+}

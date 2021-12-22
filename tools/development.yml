@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: qwerasdf
+      POSTGRES_USER: postgres
+      POSTGRES_DB: darkcrystaldev
+    volumes:
+      - ../darkcrystaldev/:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  redis:
+    image: "bitnami/redis:latest"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "6379:6379"
