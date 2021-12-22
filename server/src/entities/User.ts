@@ -14,6 +14,9 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ type: "text", nullable: false })
+  email: string;
+
   @Field(() => String)
   @Column({ type: "text", nullable: false })
   username: string;
