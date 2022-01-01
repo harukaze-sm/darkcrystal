@@ -1,10 +1,12 @@
-import { Field, Int, ObjectType } from "type-graphql";
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Field, Int, ObjectType } from 'type-graphql';
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Post } from './Post';
+// import { Post } from './Post';
 
 enum UserRole {
-  ADMIN = "admin",
-  PlAYER = "player",
-  SUPPORT = "support",
+  ADMIN = 'admin',
+  PlAYER = 'player',
+  SUPPORT = 'support',
 }
 
 @ObjectType()
@@ -14,17 +16,21 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: "text", nullable: false })
+  @Column({ type: 'text', nullable: false })
   email: string;
 
   @Field(() => String)
-  @Column({ type: "text", nullable: false })
+  @Column({ type: 'text', nullable: false })
   username: string;
 
-  @Column({ type: "text", nullable: false })
+  @Column({ type: 'text', nullable: false })
   password: string;
 
   @Field(() => String)
-  @Column({ type: "text", nullable: false, default: UserRole.PlAYER })
+  @Column({ type: 'text', nullable: false, default: UserRole.PlAYER })
   role: string;
+
+  @Field(() => [Post])
+  @OneToMany(() => Post, (post) => post.creator)
+  posts?: Post[];
 }

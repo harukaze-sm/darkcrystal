@@ -5,11 +5,11 @@ import { CenteredContainer, PrimaryButton, TextInput } from "src/styled";
 
 const Login = () => {
   const [, login] = useLogInMutation();
+  const history = useRouter();
   const [input, setInput] = useState<{ email: string; password: string }>({
     password: "",
     email: "",
   });
-  const history = useRouter();
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -25,7 +25,7 @@ const Login = () => {
       if (user.data?.logIn.error) {
         console.info(user.data?.logIn.error);
       } else {
-        history.push("/");
+        history.reload();
       }
     }
   };

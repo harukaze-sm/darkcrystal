@@ -13,6 +13,8 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** The javascript `Date` as string. Type represents date and time as the ISO Date string. */
+  DateTime: any;
 };
 
 export type MessagePayload = {
@@ -22,10 +24,17 @@ export type MessagePayload = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  createPost?: Maybe<Post>;
   createUser: UserResponse;
   logIn: UserResponse;
   logOut: Scalars['Boolean'];
   sendMessage: Scalars['String'];
+};
+
+
+export type MutationCreatePostArgs = {
+  body: Scalars['String'];
+  title: Scalars['String'];
 };
 
 
@@ -46,9 +55,21 @@ export type MutationSendMessageArgs = {
   message: Scalars['String'];
 };
 
+export type Post = {
+  __typename?: 'Post';
+  body: Scalars['String'];
+  createdAt: Scalars['DateTime'];
+  creator: User;
+  id: Scalars['Int'];
+  title: Scalars['String'];
+  type: Scalars['String'];
+  updatedAt: Scalars['DateTime'];
+};
+
 export type Query = {
   __typename?: 'Query';
   hello: Scalars['String'];
+  posts: Array<Post>;
   test: Scalars['String'];
   user?: Maybe<User>;
   users: Array<User>;
@@ -62,6 +83,7 @@ export type Subscription = {
 export type User = {
   __typename?: 'User';
   id: Scalars['Int'];
+  posts: Array<Post>;
   role: Scalars['String'];
   username: Scalars['String'];
 };
@@ -103,6 +125,11 @@ export type QueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type QueryQuery = { __typename?: 'Query', hello: string };
+
+export type PostsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type PostsQuery = { __typename?: 'Query', posts: Array<{ __typename?: 'Post', id: number, title: string, body: string, type: string, createdAt: any, updatedAt: any, creator: { __typename?: 'User', id: number, username: string, role: string } }> };
 
 export type ReceiveMessageSubscriptionVariables = Exact<{ [key: string]: never; }>;
 
@@ -172,6 +199,27 @@ export const QueryDocument = gql`
 
 export function useQueryQuery(options: Omit<Urql.UseQueryArgs<QueryQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<QueryQuery>({ query: QueryDocument, ...options });
+};
+export const PostsDocument = gql`
+    query Posts {
+  posts {
+    id
+    title
+    body
+    type
+    createdAt
+    updatedAt
+    creator {
+      id
+      username
+      role
+    }
+  }
+}
+    `;
+
+export function usePostsQuery(options: Omit<Urql.UseQueryArgs<PostsQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<PostsQuery>({ query: PostsDocument, ...options });
 };
 export const ReceiveMessageDocument = gql`
     subscription ReceiveMessage {

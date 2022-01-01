@@ -1,12 +1,16 @@
 import type { AppProps } from "next/app";
 import {
   createClient,
+  dedupExchange,
   defaultExchanges,
+  fetchExchange,
   Provider,
   subscriptionExchange,
 } from "urql";
+import { cacheExchange, Cache, QueryInput } from "@urql/exchange-graphcache";
 import { WebSocketLink } from "apollo-link-ws";
-import { GetStaticProps, NextPageContext } from "next/types";
+import { AuthContextProvider } from "src/stores/AuthContext";
+import { LogInMutation, UserDocument, UserQuery } from "src/generated/graphql";
 
 const wsClient = process.browser
   ? new WebSocketLink({
@@ -14,9 +18,21 @@ const wsClient = process.browser
       uri: `ws://localhost:8000/graphql`,
       options: {
         reconnect: true,
+        connectionParams: {
+          userId: 1
+        }
       },
     })
   : null;
+
+function betterUpdateQuery<Result, Query>(
+  cache: Cache,
+  qi: QueryInput,
+  result: any,
+  fn: (r: Result, q: Query) => Query
+) {
+  return cache.updateQuery(qi, (data) => fn(result, data as any) as any);
+}
 
 const client = createClient({
   url: "http://localhost:8000/graphql",
@@ -29,24 +45,41 @@ const client = createClient({
       //@ts-ignore
       forwardSubscription: (operation) => wsClient?.request(operation),
     }),
+    fetchExchange,
+    dedupExchange,
+    cacheExchange({
+      updates: {
+        Mutation: {
+          logIn: (_result, _args, cache, _info) => {
+            betterUpdateQuery<LogInMutation, UserQuery>(
+              cache,
+              { query: UserDocument },
+              _result,
+              (result, query) => {
+                if (result.logIn.error) {
+                  return query;
+                } else {
+                  return {
+                    user: result.logIn.user,
+                  };
+                }
+              }
+            );
+          },
+        },
+      },
+    }),
   ],
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <Provider value={client}>
-      <Component {...pageProps} />
+      <AuthContextProvider>
+        <Component {...pageProps} />
+      </AuthContextProvider>
     </Provider>
   );
 }
-
-interface Context {
-  ctx: NextPageContext;
-}
-
-MyApp.getInitialProps = async ({ ctx }: Context) => {
-  console.info(ctx.req?.headers.cookie);
-  return {};
-};
 
 export default MyApp;

@@ -1,8 +1,19 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import { useRouter } from "next/router";
+import { useContext } from "react";
 import RegisterPage from "src/pages/register";
+import AuthContext from "src/stores/AuthContext";
 
 const Register: NextPage = () => {
+  const user = useContext(AuthContext);
+  const history = useRouter();
+
+  if (user) {
+    history.push("/");
+    return <></>;
+  }
+
   return (
     <div>
       <Head>

@@ -2,7 +2,7 @@ import encrypt from 'bcryptjs';
 import { User } from '../entities/User';
 import { Arg, Mutation, Field, ObjectType, Query, Resolver, Subscription, PubSub, Root, PubSubEngine, Ctx } from 'type-graphql';
 import { PASSWORD_SALT } from '../environment';
-import { ApolloContext } from 'src/types';
+import { ApolloContext } from '../types';
 
 @ObjectType()
 class UserResponse {
@@ -13,11 +13,11 @@ class UserResponse {
   user: User;
 }
 
-@ObjectType()
-class MessagePayload {
-  @Field()
-  message: string;
-}
+// @ObjectType()
+// class MessagePayload {
+//   @Field()
+//   message: string;
+// }
 
 @Resolver()
 export class UserResolver {
@@ -29,7 +29,7 @@ export class UserResolver {
   @Query(() => User, { nullable: true })
   async user(@Ctx() { req }: ApolloContext) {
     if (!req.session.userId) return null;
-    return User.findOne({ id: req.session.userId });
+    return User.findOne({ where: { id: req.session.userId }, relations: ['posts'] });
   }
 
   @Mutation(() => UserResponse)
@@ -89,14 +89,19 @@ export class UserResolver {
 
   @Mutation(() => String)
   async sendMessage(@Arg('message') message: string, @PubSub() pubSub: PubSubEngine): Promise<string> {
-    await pubSub.publish('MESSAGE_NOTIFICATION', { message });
+    await pubSub.publish('MESSAGE_NOTIFICATION', message);
     return message;
   }
 
-  @Subscription(() => MessagePayload, {
+  @Subscription(() => String, {
     topics: 'MESSAGE_NOTIFICATION',
+    filter: ({ context }) => {
+      console.log('tHis is the good test: ', context);
+      return true;
+    },
   })
-  async receiveMessage(@Root() root: MessagePayload): Promise<MessagePayload> {
+  async receiveMessage(@Root() root: string, @Ctx() { userId }: ApolloContext): Promise<any> {
+    console.info('context: userID ', userId);
     return root;
   }
 }

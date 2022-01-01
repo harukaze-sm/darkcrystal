@@ -6,6 +6,8 @@ import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import cors from 'cors';
+import cookie from 'cookie';
+import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { ApolloServer } from 'apollo-server-express';
 import { execute, subscribe } from 'graphql';
@@ -13,14 +15,19 @@ import { buildSchema } from 'type-graphql';
 import { HelloResolver } from './resolvers/hello';
 import { createConnection } from 'typeorm';
 import { UserResolver } from './resolvers/User';
-import { SubscriptionServer } from 'subscriptions-transport-ws';
+import { ConnectionContext, SubscriptionServer } from 'subscriptions-transport-ws';
 import { ENV } from './environment';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
+import { PostResolver } from './resolvers/post';
+import { promisify } from 'util';
 
 (async () => {
   dotenv.config();
   const app = express();
+  app.use(morgan('dev'));
+  app.disable('etag');
   const httpServer = createServer(app);
+  let connectedUsers: number[] = [];
   await createConnection();
 
   const RedisStore = connectRedis(session);
@@ -50,15 +57,35 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-co
   );
 
   const schema = await buildSchema({
-    resolvers: [HelloResolver, UserResolver],
+    resolvers: [HelloResolver, UserResolver, PostResolver],
     validate: false,
   });
+
+  const GET_ASYNC = promisify<string>(redisClient.GET).bind(redisClient) as unknown as (key: string) => Promise<string | null>;
 
   const subscriptionServer = SubscriptionServer.create(
     {
       schema,
       execute,
       subscribe,
+      async onConnect(_connectionParams: any, webSocket: any) {
+        if (!webSocket.upgradeReq.headers.cookie) throw new Error('unauthorized!');
+        const cookies = cookie.parse(webSocket.upgradeReq.headers.cookie);
+        if (!cookies.qid) throw new Error('unauthorized!');
+        const qidParsed = cookieParser.signedCookie(cookies.qid, 'qwerasdf');
+        if (!qidParsed) throw new Error('unauthorized!');
+        const session = await GET_ASYNC(`sess:${qidParsed}`);
+        if (!session) throw new Error('unauthorized!');
+        const { userId }: any = JSON.parse(session!);
+        if (!userId) throw new Error('unauthorized!');
+        connectedUsers.push(userId);
+
+        return { userId };
+      },
+      onDisconnect(_webSocket: any, _context: ConnectionContext) {
+        console.info('CONTEXT?', _context);
+        console.log('Disconnected!');
+      },
     },
     {
       server: httpServer,
@@ -86,9 +113,6 @@ import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-co
   await apolloServer.start();
 
   apolloServer.applyMiddleware({ app, cors: false });
-
-  app.use(morgan('dev'));
-  app.disable('etag');
 
   app.get('/', (_, res) => {
     res.status(200).send('running');

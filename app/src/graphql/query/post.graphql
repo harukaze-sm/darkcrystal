@@ -1,0 +1,15 @@
+query Posts {
+  posts {
+    id
+    title
+    body
+    type
+    createdAt
+    updatedAt
+    creator {
+      id
+      username
+      role
+    }
+  }
+}
