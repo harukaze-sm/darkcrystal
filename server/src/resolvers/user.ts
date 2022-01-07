@@ -13,12 +13,6 @@ class UserResponse {
   user: User;
 }
 
-// @ObjectType()
-// class MessagePayload {
-//   @Field()
-//   message: string;
-// }
-
 @Resolver()
 export class UserResolver {
   @Query(() => [User])
@@ -89,19 +83,22 @@ export class UserResolver {
 
   @Mutation(() => String)
   async sendMessage(@Arg('message') message: string, @PubSub() pubSub: PubSubEngine): Promise<string> {
-    await pubSub.publish('MESSAGE_NOTIFICATION', message);
+    console.info('TEST');
+    await pubSub.publish('MESSAGE_NOTIFICATION', { message, userId: 3 });
     return message;
   }
 
   @Subscription(() => String, {
     topics: 'MESSAGE_NOTIFICATION',
-    filter: ({ context }) => {
-      console.log('tHis is the good test: ', context);
-      return true;
+    filter: (app) => {
+      console.info(app.payload);
+      if (app.payload.userId === app.context.userId) {
+        return true;
+      }
+      return false;
     },
   })
-  async receiveMessage(@Root() root: string, @Ctx() { userId }: ApolloContext): Promise<any> {
-    console.info('context: userID ', userId);
-    return root;
+  async receiveMessage(@Root() root: any): Promise<any> {
+    return root.message;
   }
 }

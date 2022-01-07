@@ -8,6 +8,9 @@ import connectRedis from 'connect-redis';
 import cors from 'cors';
 import cookie from 'cookie';
 import cookieParser from 'cookie-parser';
+import AdminJS from 'adminjs';
+import AdminJSExpress from '@adminjs/express';
+import { Database, Resource } from '@adminjs/typeorm';
 import { createServer } from 'http';
 import { ApolloServer } from 'apollo-server-express';
 import { execute, subscribe } from 'graphql';
@@ -20,6 +23,7 @@ import { ENV } from './environment';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { PostResolver } from './resolvers/post';
 import { promisify } from 'util';
+import { TeamResolver } from './resolvers/team';
 
 (async () => {
   dotenv.config();
@@ -28,7 +32,14 @@ import { promisify } from 'util';
   app.disable('etag');
   const httpServer = createServer(app);
   let connectedUsers: number[] = [];
-  await createConnection();
+  const database = await createConnection();
+
+  AdminJS.registerAdapter({ Database, Resource });
+
+  const adminJs = new AdminJS({
+    databases: [database],
+    rootPath: '/admin',
+  });
 
   const RedisStore = connectRedis(session);
   const redisClient = redis.createClient();
@@ -57,7 +68,7 @@ import { promisify } from 'util';
   );
 
   const schema = await buildSchema({
-    resolvers: [HelloResolver, UserResolver, PostResolver],
+    resolvers: [HelloResolver, UserResolver, PostResolver, TeamResolver],
     validate: false,
   });
 
@@ -117,6 +128,9 @@ import { promisify } from 'util';
   app.get('/', (_, res) => {
     res.status(200).send('running');
   });
+
+  const router = AdminJSExpress.buildRouter(adminJs);
+  app.use(adminJs.options.rootPath, router);
 
   httpServer.listen(8000);
 })();
