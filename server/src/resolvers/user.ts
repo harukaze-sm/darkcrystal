@@ -1,8 +1,10 @@
 import encrypt from 'bcryptjs';
 import { User } from '../entities/User';
-import { Arg, Mutation, Field, ObjectType, Query, Resolver, Subscription, PubSub, Root, PubSubEngine, Ctx } from 'type-graphql';
+import { Arg, Mutation, Field, ObjectType, Query, Resolver, Subscription, Root, Ctx } from 'type-graphql';
 import { PASSWORD_SALT } from '../environment';
 import { ApolloContext } from '../types';
+import { Invite, StatusEnum } from '../entities/Invite';
+import { Team } from '../entities/Team';
 
 @ObjectType()
 class UserResponse {
@@ -11,6 +13,26 @@ class UserResponse {
 
   @Field(() => User, { nullable: true })
   user: User;
+}
+
+@ObjectType()
+class TeamType {
+  @Field()
+  id: number;
+  @Field()
+  name: string;
+  @Field()
+  tag: string;
+}
+
+@ObjectType()
+class InviteTeamType {
+  @Field()
+  userId: number;
+  @Field()
+  team: TeamType;
+  @Field()
+  inviteId: number;
 }
 
 @Resolver()
@@ -81,24 +103,35 @@ export class UserResolver {
     );
   }
 
-  @Mutation(() => String)
-  async sendMessage(@Arg('message') message: string, @PubSub() pubSub: PubSubEngine): Promise<string> {
-    console.info('TEST');
-    await pubSub.publish('MESSAGE_NOTIFICATION', { message, userId: 3 });
-    return message;
+  @Mutation(() => Boolean)
+  async respondToInvite(@Arg('id') id: string, @Arg('accepted') accepted: boolean, @Ctx() { req }: ApolloContext) {
+    const user = await User.findOne({ where: { id: req.session.userId } });
+    if (!user) return false;
+    const invite = await Invite.findOne({ where: { id } });
+    if (!invite) return false;
+    if (user.id !== invite.invitedUser.id) return false;
+    if (accepted) {
+      invite.status = StatusEnum.ACCEPTED;
+      const team = await Team.findOne({ where: { id: invite.team.id } });
+      if (!team) return false;
+      team!.members = [...team!.members, user];
+      await team.save();
+    } else {
+      invite.status = StatusEnum.DECLINED;
+    }
+    return true;
   }
 
-  @Subscription(() => String, {
-    topics: 'MESSAGE_NOTIFICATION',
+  @Subscription(() => InviteTeamType, {
+    topics: 'SENT_TEAM_INVITE',
     filter: (app) => {
-      console.info(app.payload);
       if (app.payload.userId === app.context.userId) {
         return true;
       }
       return false;
     },
   })
-  async receiveMessage(@Root() root: any): Promise<any> {
-    return root.message;
+  async teamInvite(@Root() root: any): Promise<any> {
+    return root;
   }
 }

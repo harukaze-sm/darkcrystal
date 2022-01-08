@@ -1,9 +1,9 @@
 import { Field, Int, ObjectType } from 'type-graphql';
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Team } from './Team';
 import { User } from './User';
 
-enum StatusEnum {
+export enum StatusEnum {
   ACCEPTED = 'accepted',
   DECLINED = 'declined',
   AWAITING = 'awaiting',
@@ -29,10 +29,10 @@ export class Invite extends BaseEntity {
   status: StatusEnum;
 
   @Field(() => Date)
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
-  validUntil: Date;
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
+  createdAt: Date;
 
   @Field(() => Date)
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', onUpdate: 'CURRENT_TIMESTAMP(6)' })
+  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)', onUpdate: 'CURRENT_TIMESTAMP(6)' })
   updatedAt: Date;
 }

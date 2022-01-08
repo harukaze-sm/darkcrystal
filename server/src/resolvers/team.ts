@@ -1,5 +1,5 @@
-import { Arg, Ctx, Field, InputType, Mutation, PubSub, PubSubEngine, Query, Resolver, Root, Subscription } from 'type-graphql';
-import { Invite } from '../entities/Invite';
+import { Arg, Ctx, Field, InputType, Mutation, PubSub, PubSubEngine, Query, Resolver } from 'type-graphql';
+import { Invite, StatusEnum } from '../entities/Invite';
 import { Team } from '../entities/Team';
 import { User } from '../entities/User';
 import { ApolloContext } from '../types';
@@ -22,29 +22,25 @@ export class TeamResolver {
   }
 
   @Mutation(() => Invite, { nullable: false })
-  async invite(@Arg('id') id: number, @Ctx() { req }: ApolloContext) {
+  async invitePlayer(@Arg('id') id: number, @Ctx() { req }: ApolloContext, @PubSub() pubSub: PubSubEngine) {
     const team = await Team.findOne({ where: { owner: { id: req.session.userId } } });
     if (!team) throw new Error('Something went wrong');
     const user = await User.findOne({ where: { id } });
     if (!user) throw new Error('noUser');
+    const exists = await Invite.findOne({ where: { invitedUser: user.id, team: team.id, status: StatusEnum.AWAITING } });
+    if (exists) throw new Error('alreadyInvited');
     const invite = await Invite.create({ team, invitedUser: user }).save();
+    const inviteMessage = {
+      userId: user.id,
+      team: {
+        id: team.id,
+        name: team.name,
+        tag: team.tag,
+      },
+      inviteId: invite.id,
+    };
+    await pubSub.publish('SENT_TEAM_INVITE', inviteMessage);
     return invite;
-  }
-
-  @Mutation(() => Boolean, { nullable: true })
-  async invitePlayer(@Arg('id') id: number, @Ctx() { req }: ApolloContext) {
-    const user = await User.findOne({ where: { id: req.session.userId } });
-    const team = await Team.findOne({ where: { owner: { id: req.session.userId } }, relations: ['owner', 'members'] });
-    if (!user) throw new Error('noUser');
-    if (!team) throw new Error('noTeam');
-    const invitedUser = await User.findOne({ where: { id } });
-    if (!invitedUser) throw new Error('noTarget');
-    if (invitedUser.team) throw new Error('alreadyInTeam');
-    if (team.members.includes(invitedUser)) throw new Error('alreadyInYourTeam');
-    const members = [...team.members, invitedUser];
-    team.members = members;
-    team.save();
-    return true;
   }
 
   @Mutation(() => Team, { nullable: true })
@@ -59,23 +55,5 @@ export class TeamResolver {
       owner: owner,
     }).save();
     return team;
-  }
-
-  @Mutation(() => String)
-  async sendInvite(@Arg('message') message: string, @PubSub() pubSub: PubSubEngine): Promise<string> {
-    await pubSub.publish('SENT_INVITE', message);
-    return message;
-  }
-
-  @Subscription(() => String, {
-    topics: 'SENT_INVITE',
-    nullable: true,
-  })
-  async recieveInvite(@Root() root: string, @Ctx() { userId }: ApolloContext): Promise<any> {
-    console.info('context: userID ', userId);
-    if (userId === 3) {
-      return root;
-    }
-    return null;
   }
 }
