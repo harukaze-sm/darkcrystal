@@ -1,0 +1,5 @@
+mutation InvitePlayer($invitePlayerId: Float!) {
+  invitePlayer(id: $invitePlayerId) {
+    id
+  }
+}

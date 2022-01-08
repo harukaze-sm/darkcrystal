@@ -9,6 +9,10 @@
     "gen": "graphql-codegen --config ./codegen.yml"
   },
   "dependencies": {
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@mui/material": "^5.2.7",
+    "@mui/styles": "^5.2.3",
     "@urql/exchange-graphcache": "^4.3.6",
     "apollo-link-ws": "^1.0.20",
     "graphql": "^16.2.0",

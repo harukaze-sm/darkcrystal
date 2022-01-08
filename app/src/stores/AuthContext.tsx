@@ -16,7 +16,7 @@ export const AuthContextProvider: React.FC = ({ children }) => {
   const [{ data, fetching }] = useUserQuery();
 
   if (fetching) {
-    return <h1>loading...</h1>;
+    return <></>;
   }
 
   return (

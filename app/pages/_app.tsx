@@ -19,8 +19,8 @@ const wsClient = process.browser
       options: {
         reconnect: true,
         connectionParams: {
-          userId: 1
-        }
+          userId: 1,
+        },
       },
     })
   : null;
@@ -76,6 +76,16 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <Provider value={client}>
       <AuthContextProvider>
+        <style jsx global>{`
+          body {
+            margin: 0px;
+            padding: 0px;
+          }
+          @font-face {
+            font-family: Nautigal;
+            src: url(/fonts/TheNautigal-Regular.ttf);
+          }
+        `}</style>
         <Component {...pageProps} />
       </AuthContextProvider>
     </Provider>

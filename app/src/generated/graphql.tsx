@@ -17,24 +17,49 @@ export type Scalars = {
   DateTime: any;
 };
 
-export type MessagePayload = {
-  __typename?: 'MessagePayload';
-  message: Scalars['String'];
+export type CreateTeamArgs = {
+  description: Scalars['String'];
+  name: Scalars['String'];
+  tag: Scalars['String'];
+};
+
+export type Invite = {
+  __typename?: 'Invite';
+  createdAt: Scalars['DateTime'];
+  id: Scalars['Int'];
+  invitedUser: User;
+  status: Scalars['String'];
+  team: Team;
+  updatedAt: Scalars['DateTime'];
+};
+
+export type InviteTeamType = {
+  __typename?: 'InviteTeamType';
+  inviteId: Scalars['Float'];
+  team: TeamType;
+  userId: Scalars['Float'];
 };
 
 export type Mutation = {
   __typename?: 'Mutation';
   createPost?: Maybe<Post>;
+  createTeam?: Maybe<Team>;
   createUser: UserResponse;
+  invitePlayer: Invite;
   logIn: UserResponse;
   logOut: Scalars['Boolean'];
-  sendMessage: Scalars['String'];
+  respondToInvite: Scalars['Boolean'];
 };
 
 
 export type MutationCreatePostArgs = {
   body: Scalars['String'];
   title: Scalars['String'];
+};
+
+
+export type MutationCreateTeamArgs = {
+  options: CreateTeamArgs;
 };
 
 
@@ -45,14 +70,20 @@ export type MutationCreateUserArgs = {
 };
 
 
+export type MutationInvitePlayerArgs = {
+  id: Scalars['Float'];
+};
+
+
 export type MutationLogInArgs = {
   email: Scalars['String'];
   password: Scalars['String'];
 };
 
 
-export type MutationSendMessageArgs = {
-  message: Scalars['String'];
+export type MutationRespondToInviteArgs = {
+  accepted: Scalars['Boolean'];
+  id: Scalars['String'];
 };
 
 export type Post = {
@@ -70,6 +101,7 @@ export type Query = {
   __typename?: 'Query';
   hello: Scalars['String'];
   posts: Array<Post>;
+  teams?: Maybe<Array<Team>>;
   test: Scalars['String'];
   user?: Maybe<User>;
   users: Array<User>;
@@ -77,14 +109,34 @@ export type Query = {
 
 export type Subscription = {
   __typename?: 'Subscription';
-  receiveMessage: MessagePayload;
+  teamInvite: InviteTeamType;
+};
+
+export type Team = {
+  __typename?: 'Team';
+  createdAt: Scalars['DateTime'];
+  description: Scalars['String'];
+  id: Scalars['Int'];
+  members: Array<User>;
+  name: Scalars['String'];
+  owner: User;
+  tag: Scalars['String'];
+  updatedAt: Scalars['DateTime'];
+};
+
+export type TeamType = {
+  __typename?: 'TeamType';
+  id: Scalars['Float'];
+  name: Scalars['String'];
+  tag: Scalars['String'];
 };
 
 export type User = {
   __typename?: 'User';
   id: Scalars['Int'];
-  posts: Array<Post>;
+  posts?: Maybe<Array<Post>>;
   role: Scalars['String'];
+  team?: Maybe<Team>;
   username: Scalars['String'];
 };
 
@@ -121,6 +173,13 @@ export type UserQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', id: number, username: string, role: string } | null | undefined };
 
+export type InvitePlayerMutationVariables = Exact<{
+  invitePlayerId: Scalars['Float'];
+}>;
+
+
+export type InvitePlayerMutation = { __typename?: 'Mutation', invitePlayer: { __typename?: 'Invite', id: number } };
+
 export type QueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -131,10 +190,10 @@ export type PostsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type PostsQuery = { __typename?: 'Query', posts: Array<{ __typename?: 'Post', id: number, title: string, body: string, type: string, createdAt: any, updatedAt: any, creator: { __typename?: 'User', id: number, username: string, role: string } }> };
 
-export type ReceiveMessageSubscriptionVariables = Exact<{ [key: string]: never; }>;
+export type TeamInviteSubscriptionVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ReceiveMessageSubscription = { __typename?: 'Subscription', receiveMessage: { __typename?: 'MessagePayload', message: string } };
+export type TeamInviteSubscription = { __typename?: 'Subscription', teamInvite: { __typename?: 'InviteTeamType', userId: number, inviteId: number, team: { __typename?: 'TeamType', tag: string, name: string, id: number } } };
 
 
 export const CreateUserDocument = gql`
@@ -191,6 +250,17 @@ export const UserDocument = gql`
 export function useUserQuery(options: Omit<Urql.UseQueryArgs<UserQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<UserQuery>({ query: UserDocument, ...options });
 };
+export const InvitePlayerDocument = gql`
+    mutation InvitePlayer($invitePlayerId: Float!) {
+  invitePlayer(id: $invitePlayerId) {
+    id
+  }
+}
+    `;
+
+export function useInvitePlayerMutation() {
+  return Urql.useMutation<InvitePlayerMutation, InvitePlayerMutationVariables>(InvitePlayerDocument);
+};
 export const QueryDocument = gql`
     query Query {
   hello
@@ -221,14 +291,20 @@ export const PostsDocument = gql`
 export function usePostsQuery(options: Omit<Urql.UseQueryArgs<PostsQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<PostsQuery>({ query: PostsDocument, ...options });
 };
-export const ReceiveMessageDocument = gql`
-    subscription ReceiveMessage {
-  receiveMessage {
-    message
+export const TeamInviteDocument = gql`
+    subscription TeamInvite {
+  teamInvite {
+    userId
+    team {
+      tag
+      name
+      id
+    }
+    inviteId
   }
 }
     `;
 
-export function useReceiveMessageSubscription<TData = ReceiveMessageSubscription>(options: Omit<Urql.UseSubscriptionArgs<ReceiveMessageSubscriptionVariables>, 'query'> = {}, handler?: Urql.SubscriptionHandler<ReceiveMessageSubscription, TData>) {
-  return Urql.useSubscription<ReceiveMessageSubscription, TData, ReceiveMessageSubscriptionVariables>({ query: ReceiveMessageDocument, ...options }, handler);
+export function useTeamInviteSubscription<TData = TeamInviteSubscription>(options: Omit<Urql.UseSubscriptionArgs<TeamInviteSubscriptionVariables>, 'query'> = {}, handler?: Urql.SubscriptionHandler<TeamInviteSubscription, TData>) {
+  return Urql.useSubscription<TeamInviteSubscription, TData, TeamInviteSubscriptionVariables>({ query: TeamInviteDocument, ...options }, handler);
 };

@@ -2,14 +2,23 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useContext } from "react";
-import { useLogoutMutation, usePostsQuery } from "src/generated/graphql";
+import {
+  useLogoutMutation,
+  usePostsQuery,
+  useTeamInviteSubscription,
+} from "src/generated/graphql";
+import Homepage from "src/pages/homepage";
 import AuthContext from "src/stores/AuthContext";
 
 const Home: NextPage = () => {
   const [, logout] = useLogoutMutation();
   const [{ data }] = usePostsQuery();
+  const [{ data: subcriptions }] = useTeamInviteSubscription();
   const history = useRouter();
   const user = useContext(AuthContext);
+
+  console.info(subcriptions?.teamInvite);
+  console.info(user?.id);
 
   const handleLogout = async () => {
     logout();
@@ -17,8 +26,7 @@ const Home: NextPage = () => {
   };
 
   if (!user) {
-    history.push("/login");
-    return <></>;
+    return <Homepage />;
   }
 
   return (
@@ -29,7 +37,19 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div>
-        <a onClick={handleLogout}>Logout</a>
+        <div
+          style={{
+            display: "flex",
+            width: 200,
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <h3>Hello, {user.username}</h3>
+          <button style={{ height: 20 }} onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
         {data?.posts.map((p) => {
           return (
             <div key={p.id}>

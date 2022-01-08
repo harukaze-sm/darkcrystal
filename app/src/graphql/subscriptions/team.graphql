@@ -1,0 +1,11 @@
+subscription TeamInvite {
+  teamInvite {
+    userId
+    team {
+      tag
+      name
+      id
+    }
+    inviteId
+  }
+}

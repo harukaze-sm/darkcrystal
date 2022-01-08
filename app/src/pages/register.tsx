@@ -30,7 +30,7 @@ const Register = () => {
       if (user.data?.createUser.error) {
         console.info(user.data?.createUser.error);
       } else {
-        history.push("/");
+        history.reload();
       }
     }
   };
