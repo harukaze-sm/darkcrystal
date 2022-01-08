@@ -1,5 +1,6 @@
 import { Button, TextField } from "@mui/material";
 import Head from "next/head";
+import { useSpring, animated } from "react-spring";
 import { useRouter } from "next/router";
 import React, { ChangeEvent, useState } from "react";
 import { useCreateUserMutation, useLogInMutation } from "src/generated/graphql";
@@ -40,7 +41,7 @@ const ContainerRight = styled.div`
   align-items: center;
 `;
 
-const InnerLeftContainer = styled.div`
+const InnerLeftContainer = styled(animated.div)`
   width: 85%;
   height: 80%;
   display: flex;
@@ -66,26 +67,52 @@ const InputContainer = styled.form<InputContainerProps>`
 const Homepage = () => {
   const history = useRouter();
   const [isRegister, setIsRegister] = useState(false);
+  const [reset, setReset] = useState(true);
   const [, logIn] = useLogInMutation();
   const [, register] = useCreateUserMutation();
-  const [values, setValues] = useState({
+  const transitions = useSpring({
+    from: { opacity: 0, transform: "translate3d(100%,0,0)" },
+    to: { opacity: 1, transform: "translate3d(0%,0,0)" },
+    onResolve: () => setReset(false),
+    reset,
+  });
+
+  const [logInValues, setLogInValues] = useState({
+    email: "",
+    password: "",
+    username: "",
+    confirm: "",
+  });
+  const [registerValues, setRegisterValues] = useState({
     email: "",
     password: "",
     username: "",
     confirm: "",
   });
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleLoginInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setValues({
-      ...values,
+    setLogInValues({
+      ...logInValues,
+      [name]: value,
+    });
+  };
+  const handleRegisterInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setRegisterValues({
+      ...registerValues,
       [name]: value,
     });
   };
 
+  const handleSwap = () => {
+    setReset(true);
+    setIsRegister(!isRegister);
+  };
+
   const handleLogIn = async (e: ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { data } = await logIn(values);
+    const { data } = await logIn(logInValues);
     if (data?.logIn.error) {
       console.info(data?.logIn.error);
       return;
@@ -95,7 +122,7 @@ const Homepage = () => {
 
   const handleRegister = async (e: ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { data } = await register(values);
+    const { data } = await register(registerValues);
     if (data?.createUser.error) {
       console.info(data.createUser.error);
       return;
@@ -114,7 +141,7 @@ const Homepage = () => {
         <ContainerLeft />
         <ContainerRight>
           {isRegister ? (
-            <InnerLeftContainer>
+            <InnerLeftContainer style={transitions}>
               <h1 style={{ fontFamily: "Nautigal", marginBottom: "4rem" }}>
                 Dark Crystal
               </h1>
@@ -124,31 +151,31 @@ const Homepage = () => {
                   label="Email"
                   name="email"
                   type="email"
-                  value={values.email}
-                  onChange={handleInputChange}
+                  value={registerValues.email}
+                  onChange={handleRegisterInputChange}
                 />
                 <TextInput
                   variant="outlined"
                   label="Username"
                   name="username"
-                  value={values.username}
-                  onChange={handleInputChange}
+                  value={registerValues.username}
+                  onChange={handleRegisterInputChange}
                 />
                 <TextInput
                   variant="outlined"
                   label="Password"
                   type="password"
                   name="password"
-                  value={values.password}
-                  onChange={handleInputChange}
+                  value={registerValues.password}
+                  onChange={handleRegisterInputChange}
                 />
                 <TextInput
                   variant="outlined"
                   label="Confirm Password"
                   type="password"
                   name="confirm"
-                  value={values.confirm}
-                  onChange={handleInputChange}
+                  value={registerValues.confirm}
+                  onChange={handleRegisterInputChange}
                 />
                 <Button type="submit" variant="contained">
                   Register
@@ -157,7 +184,7 @@ const Homepage = () => {
               <p>
                 Already an user?
                 <a
-                  onClick={() => setIsRegister(false)}
+                  onClick={handleSwap}
                   style={{ cursor: "pointer", color: "blue", marginLeft: 2 }}
                 >
                   Log in
@@ -165,7 +192,7 @@ const Homepage = () => {
               </p>
             </InnerLeftContainer>
           ) : (
-            <InnerLeftContainer>
+            <InnerLeftContainer style={transitions}>
               <h1 style={{ fontFamily: "Nautigal", marginBottom: "4rem" }}>
                 Dark Crystal
               </h1>
@@ -174,16 +201,16 @@ const Homepage = () => {
                   variant="outlined"
                   label="Email"
                   name="email"
-                  value={values.email}
-                  onChange={handleInputChange}
+                  value={logInValues.email}
+                  onChange={handleLoginInputChange}
                 />
                 <TextInput
                   variant="outlined"
                   label="Password"
                   type="password"
                   name="password"
-                  value={values.password}
-                  onChange={handleInputChange}
+                  value={logInValues.password}
+                  onChange={handleLoginInputChange}
                 />
                 <Button type="submit" variant="contained">
                   Login
@@ -192,7 +219,7 @@ const Homepage = () => {
               <p>
                 Don't have an account?
                 <a
-                  onClick={() => setIsRegister(true)}
+                  onClick={handleSwap}
                   style={{ cursor: "pointer", color: "blue", marginLeft: 2 }}
                 >
                   Sign up
