@@ -173,6 +173,14 @@ export type UserQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', id: number, username: string, role: string } | null | undefined };
 
+export type CreatePostMutationVariables = Exact<{
+  body: Scalars['String'];
+  title: Scalars['String'];
+}>;
+
+
+export type CreatePostMutation = { __typename?: 'Mutation', createPost?: { __typename?: 'Post', id: number, title: string, body: string, type: string, createdAt: any, updatedAt: any, creator: { __typename?: 'User', id: number, username: string, role: string } } | null | undefined };
+
 export type InvitePlayerMutationVariables = Exact<{
   invitePlayerId: Scalars['Float'];
 }>;
@@ -249,6 +257,27 @@ export const UserDocument = gql`
 
 export function useUserQuery(options: Omit<Urql.UseQueryArgs<UserQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<UserQuery>({ query: UserDocument, ...options });
+};
+export const CreatePostDocument = gql`
+    mutation CreatePost($body: String!, $title: String!) {
+  createPost(body: $body, title: $title) {
+    id
+    title
+    body
+    creator {
+      id
+      username
+      role
+    }
+    type
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+export function useCreatePostMutation() {
+  return Urql.useMutation<CreatePostMutation, CreatePostMutationVariables>(CreatePostDocument);
 };
 export const InvitePlayerDocument = gql`
     mutation InvitePlayer($invitePlayerId: Float!) {

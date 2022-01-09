@@ -1,0 +1,15 @@
+mutation CreatePost($body: String!, $title: String!) {
+  createPost(body: $body, title: $title) {
+    id
+    title
+    body
+    creator {
+      id
+      username
+      role
+    }
+    type
+    createdAt
+    updatedAt
+  }
+}
