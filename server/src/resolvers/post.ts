@@ -22,7 +22,7 @@ import { ApolloContext } from '../types';
 export class PostResolver {
   @Query(() => [Post])
   async posts() {
-    return Post.find({ relations: ['creator'] });
+    return Post.find({ relations: ['creator'], order: { createdAt: 'DESC' } });
   }
 
   @Mutation(() => Post, { nullable: true })
